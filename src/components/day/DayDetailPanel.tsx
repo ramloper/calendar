@@ -1,7 +1,7 @@
 'use client'
 
 import { Plus, CalendarDays, Clock, CheckCircle2, Circle } from 'lucide-react'
-import { format, isToday } from 'date-fns'
+import { format, isToday, differenceInCalendarDays } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/hooks/useAuth'
@@ -9,6 +9,7 @@ import { useSchedules, useToggleScheduleDone } from '@/hooks/useSchedules'
 import { useCalendarStore } from '@/stores/calendarStore'
 import { useUiStore } from '@/stores/uiStore'
 import { isSameDay, formatDate } from '@/lib/utils/date'
+import { startOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { Schedule } from '@/types'
 
@@ -48,7 +49,14 @@ export function DayDetailPanel() {
   const isTodayDate = isToday(date)
 
   const daySchedules = (schedules ?? [])
-    .filter((s) => isSameDay(toDate(s.startAt as Timestamp | Date | string), date))
+    .filter((s) => {
+      const start = toDate(s.startAt as Timestamp | Date | string)
+      const end   = toDate(s.endAt   as Timestamp | Date | string)
+      const dayStart = startOfDay(date)
+      const dayEnd   = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1)
+      // 오늘 시작하거나, 오늘에 걸쳐있는 멀티데이 일정 포함
+      return isSameDay(start, date) || (start <= dayEnd && end >= dayStart)
+    })
     .sort((a, b) => {
       // 종일 일정 먼저, 그 다음 시작 시간순
       if (a.isAllDay && !b.isAllDay) return -1
@@ -162,8 +170,28 @@ function ScheduleCard({ schedule, onEdit, onToggle }: ScheduleCardProps) {
             </span>
           </div>
 
-          {/* 시간 (종일 아닌 경우) */}
-          {!schedule.isAllDay && (
+          {/* 멀티데이 날짜 범위 */}
+          {(() => {
+            const isMultiDay = endDate && differenceInCalendarDays(endDate, startDate) >= 1
+            if (!isMultiDay) return null
+            const today = startOfDay(new Date())
+            const isOngoing = startDate < today && endDate! >= today
+            return (
+              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                <span className="text-xs text-muted-foreground">
+                  {format(startDate, 'M월 d일', { locale: ko })} ~ {format(endDate!, 'M월 d일', { locale: ko })}
+                </span>
+                {isOngoing && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium">
+                    진행 중
+                  </span>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* 시간 (종일 아닌 경우 + 당일 일정만) */}
+          {!schedule.isAllDay && endDate && differenceInCalendarDays(endDate, startDate) < 1 && (
             <div className="flex items-center gap-1 mt-1">
               <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
               <span className="text-xs text-muted-foreground">
@@ -173,8 +201,18 @@ function ScheduleCard({ schedule, onEdit, onToggle }: ScheduleCardProps) {
             </div>
           )}
 
-          {/* 종일 뱃지 */}
-          {schedule.isAllDay && (
+          {/* 멀티데이 시간 (종일 아닌 경우) */}
+          {!schedule.isAllDay && endDate && differenceInCalendarDays(endDate, startDate) >= 1 && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground">
+                {formatDate(startDate, 'HH:mm')} ~ {formatDate(endDate, 'HH:mm')}
+              </span>
+            </div>
+          )}
+
+          {/* 종일 뱃지 (당일 종일만) */}
+          {schedule.isAllDay && endDate && differenceInCalendarDays(endDate, startDate) < 1 && (
             <span className="inline-block mt-1 text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
               종일
             </span>

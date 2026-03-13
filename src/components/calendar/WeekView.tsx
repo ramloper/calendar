@@ -5,6 +5,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
   useDroppable,
@@ -12,7 +13,7 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { restrictToWindowEdges } from '@dnd-kit/modifiers'
+import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
 
@@ -247,7 +248,7 @@ export function WeekView() {
   return (
     <DndContext
       sensors={sensors}
-      modifiers={[restrictToWindowEdges]}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -404,7 +405,7 @@ export function WeekView() {
         </div>
       </div>
 
-      <DragOverlay>
+      <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
         {draggingSchedule && <DragPreview schedule={draggingSchedule} />}
       </DragOverlay>
     </DndContext>

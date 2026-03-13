@@ -5,12 +5,13 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { restrictToWindowEdges } from '@dnd-kit/modifiers'
+import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
@@ -291,7 +292,7 @@ function WeekRow({
 export function MonthView() {
   const { user } = useAuth()
   const { currentDate, selectedDate, setSelectedDate } = useCalendarStore()
-  const { openEditModal, openCreateModal } = useUiStore()
+  const { openEditModal } = useUiStore()
   const { data: schedules } = useSchedules(user?.uid ?? null)
   const updateSchedule = useUpdateSchedule(user?.uid ?? '')
 
@@ -346,7 +347,7 @@ export function MonthView() {
   return (
     <DndContext
       sensors={sensors}
-      modifiers={[restrictToWindowEdges]}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -378,7 +379,6 @@ export function MonthView() {
               selectedDate={selectedDate}
               onSelectDate={(date) => {
                 setSelectedDate(date)
-                openCreateModal(date)
               }}
               onEdit={openEditModal}
             />
@@ -387,7 +387,7 @@ export function MonthView() {
       </div>
 
       {/* 드래그 중인 일정 미리보기 */}
-      <DragOverlay>
+      <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
         {draggingSchedule && <DragPreview schedule={draggingSchedule} />}
       </DragOverlay>
     </DndContext>

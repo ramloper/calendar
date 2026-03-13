@@ -23,6 +23,9 @@ const ADVANCE_OPTIONS = [
   { value: 30,   label: '30분 전' },
   { value: 60,   label: '1시간 전' },
   { value: 1440, label: '1일 전' },
+  { value: 10080, label: '7일 전' },
+  { value: 21600, label: '보름 전' },
+  { value: 43200, label: '한 달 전' },
 ]
 
 export function SettingsModal() {
@@ -258,11 +261,6 @@ export function SettingsModal() {
             )}
           </div>
 
-          {/* 안내 */}
-          <p className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-4">
-            Vercel 배포 후에는 10분마다 자동으로 알림이 발송돼요.
-            각 일정에서 이메일 알림을 켜야 실제로 발송됩니다.
-          </p>
         </div>
 
         {/* 버튼 */}

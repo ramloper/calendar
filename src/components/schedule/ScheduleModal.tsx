@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,18 @@ export function ScheduleModal() {
   } = useUiStore()
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  // 모달이 열릴 때마다 카운터를 증가시켜 폼을 강제 remount
+  const openCountRef = useRef(0)
+  const [formKey, setFormKey] = useState(0)
+  useEffect(() => {
+    if (isScheduleModalOpen) {
+      openCountRef.current += 1
+      setFormKey(openCountRef.current)
+      setSaveError(null)
+      setShowDeleteConfirm(false)
+    }
+  }, [isScheduleModalOpen])
 
   const { data: schedules } = useSchedules(user?.uid ?? null)
   const createSchedule = useCreateSchedule(user?.uid ?? '')
@@ -54,6 +66,9 @@ export function ScheduleModal() {
         color: editingSchedule.color,
         repeat: {
           ...editingSchedule.repeat,
+          // Firestore는 optional 필드를 null로 저장 → zod는 null을 거부하므로 undefined로 변환
+          daysOfWeek: editingSchedule.repeat.daysOfWeek ?? undefined,
+          endCount:   editingSchedule.repeat.endCount   ?? undefined,
           endDate: editingSchedule.repeat.endDate
             ? (editingSchedule.repeat.endDate as Timestamp).toDate()
             : undefined,
@@ -70,23 +85,34 @@ export function ScheduleModal() {
 
   const handleSubmit = async (values: ScheduleFormValues) => {
     if (!user) return
-    if (scheduleModalMode === 'create') {
-      await createSchedule.mutateAsync(values)
-    } else if (editingScheduleId) {
-      await updateSchedule.mutateAsync({ scheduleId: editingScheduleId, values })
+    setSaveError(null)
+    try {
+      if (scheduleModalMode === 'create') {
+        await createSchedule.mutateAsync(values)
+      } else if (editingScheduleId) {
+        await updateSchedule.mutateAsync({ scheduleId: editingScheduleId, values })
+      }
+      closeScheduleModal()
+    } catch {
+      setSaveError('저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.')
     }
-    closeScheduleModal()
   }
 
   const handleDelete = async () => {
     if (!user || !editingScheduleId) return
-    await deleteSchedule.mutateAsync(editingScheduleId)
-    setShowDeleteConfirm(false)
-    closeScheduleModal()
+    try {
+      await deleteSchedule.mutateAsync(editingScheduleId)
+      setShowDeleteConfirm(false)
+      closeScheduleModal()
+    } catch {
+      setSaveError('삭제 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.')
+      setShowDeleteConfirm(false)
+    }
   }
 
   const handleClose = () => {
     setShowDeleteConfirm(false)
+    setSaveError(null)
     closeScheduleModal()
   }
 
@@ -152,8 +178,13 @@ export function ScheduleModal() {
               </div>
             </DialogHeader>
 
+            {saveError && (
+              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg -mb-2">
+                {saveError}
+              </p>
+            )}
             <ScheduleForm
-              key={editingScheduleId ?? `create-${defaultDate?.getTime() ?? 'empty'}`}
+              key={`${editingScheduleId ?? 'create'}-${formKey}`}
               defaultValues={defaultValues}
               onSubmit={handleSubmit}
               onCancel={handleClose}
@@ -166,3 +197,4 @@ export function ScheduleModal() {
     </Dialog>
   )
 }
+

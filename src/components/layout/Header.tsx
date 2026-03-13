@@ -12,7 +12,7 @@ export function Header() {
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background shrink-0">
       <div className="text-sm text-muted-foreground">
-        {formatDate(new Date(), 'yyyy년 M월 d일 EEEE')}
+        {/*{formatDate(new Date(), 'yyyy년 M월 d일 EEEE')}*/}
       </div>
 
       <div className="flex items-center gap-2">

@@ -59,6 +59,9 @@ const ADVANCE_OPTIONS = [
   { value: 30,   label: '30분 전' },
   { value: 60,   label: '1시간 전' },
   { value: 1440, label: '1일 전' },
+  { value: 10080, label: '7일 전' },
+  { value: 21600, label: '보름 전' },
+  { value: 43200, label: '한 달 전' },
 ]
 
 const PRESET_COLORS = [
@@ -248,8 +251,11 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
               <Input
                 type="number"
                 min={1}
-                defaultValue={1}
-                onChange={(e) => setValue('repeat.interval', Number(e.target.value))}
+                value={watch('repeat.interval') ?? 1}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setValue('repeat.interval', v > 0 ? v : 1)
+                }}
                 className="w-16 text-center"
               />
               <Select

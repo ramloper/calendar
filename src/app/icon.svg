@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background: Toss Blue rounded square -->
+  <rect width="32" height="32" rx="7" fill="#007AFF"/>
+  <!-- Calendar body (white) -->
+  <rect x="5" y="11" width="22" height="16" rx="2.5" fill="white"/>
+  <!-- Calendar top bar (darker blue) -->
+  <rect x="5" y="11" width="22" height="7" rx="2.5" fill="#0055CC"/>
+  <rect x="5" y="15" width="22" height="3" fill="#0055CC"/>
+  <!-- Left hook -->
+  <rect x="10" y="7.5" width="3" height="7" rx="1.5" fill="white"/>
+  <!-- Right hook -->
+  <rect x="19" y="7.5" width="3" height="7" rx="1.5" fill="white"/>
+  <!-- Date grid: row 1 -->
+  <rect x="8" y="21" width="3.5" height="2.5" rx="0.8" fill="#007AFF"/>
+  <rect x="14.25" y="21" width="3.5" height="2.5" rx="0.8" fill="#007AFF"/>
+  <rect x="20.5" y="21" width="3.5" height="2.5" rx="0.8" fill="#007AFF"/>
+  <!-- Date grid: row 2 (partial for space) -->
+  <rect x="8" y="25" width="3.5" height="1.5" rx="0.8" fill="#C0D9FF"/>
+  <rect x="14.25" y="25" width="3.5" height="1.5" rx="0.8" fill="#C0D9FF"/>
+</svg>

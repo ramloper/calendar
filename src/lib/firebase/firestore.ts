@@ -58,15 +58,16 @@ export async function fetchUpcomingSchedules(
   userId: string,
   limit_: number = 20
 ): Promise<Schedule[]> {
-  const now = Timestamp.now()
+  // 진행 중인 일정도 포함하기 위해 60일 전부터 조회
+  const past = new Date()
+  past.setDate(past.getDate() - 60)
   const q = query(
     schedulesRef(userId),
-    where('startAt', '>=', now),
+    where('startAt', '>=', Timestamp.fromDate(past)),
     orderBy('startAt', 'asc')
   )
   const snapshot = await getDocs(q)
   return snapshot.docs
-    .slice(0, limit_)
     .map(d => ({ id: d.id, ...d.data() } as Schedule))
 }
 
@@ -114,13 +115,26 @@ export async function updateSchedule(
   scheduleId: string,
   values: Partial<ScheduleFormValues>
 ): Promise<void> {
+  // notifications를 통째로 덮어쓰면 sentFlags가 날아가므로 dot notation으로 개별 업데이트
+  const { notifications, repeat, startAt, endAt, ...rest } = values
+
   const data: Record<string, unknown> = {
-    ...values,
+    ...rest,
     updatedAt: serverTimestamp(),
   }
-  if (values.startAt) data.startAt = Timestamp.fromDate(values.startAt)
-  if (values.endAt) data.endAt = Timestamp.fromDate(values.endAt)
-  if (values.repeat) data.repeat = sanitizeRepeat(values.repeat)
+
+  if (startAt) data.startAt = Timestamp.fromDate(startAt)
+  if (endAt)   data.endAt   = Timestamp.fromDate(endAt)
+  if (repeat)  data.repeat  = sanitizeRepeat(repeat)
+
+  // notifications: dot notation으로 각 필드만 업데이트 + advanceTimes 변경 시 sentFlags 재설정
+  if (notifications) {
+    data['notifications.email']        = notifications.email
+    data['notifications.sms']          = notifications.sms
+    data['notifications.advanceTimes'] = notifications.advanceTimes
+    // advanceTimes가 바뀌었을 수 있으므로 sentFlags를 새 길이에 맞게 초기화
+    data['notifications.sentFlags']    = notifications.advanceTimes.map(() => false)
+  }
 
   await updateDoc(scheduleRef(userId, scheduleId), data)
 }

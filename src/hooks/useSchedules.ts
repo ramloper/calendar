@@ -9,6 +9,7 @@ import {
   deleteSchedule,
   toggleScheduleDone,
 } from '@/lib/firebase/firestore'
+import { upcomingKeys } from '@/hooks/useUpcoming'
 import type { ScheduleFormValues } from '@/types'
 
 // ─── 쿼리 키 ────────────────────────────────────────────
@@ -42,6 +43,12 @@ export function useSchedulesByRange(
   })
 }
 
+// ─── 공통: 일정 + 마감 임박 동시 무효화 ─────────────────
+function invalidateAll(queryClient: ReturnType<typeof useQueryClient>, userId: string) {
+  queryClient.invalidateQueries({ queryKey: scheduleKeys.all(userId) })
+  queryClient.invalidateQueries({ queryKey: upcomingKeys.all(userId) })
+}
+
 // ─── 일정 생성 ───────────────────────────────────────────
 export function useCreateSchedule(userId: string) {
   const queryClient = useQueryClient()
@@ -49,9 +56,7 @@ export function useCreateSchedule(userId: string) {
   return useMutation({
     mutationFn: (values: ScheduleFormValues) =>
       createSchedule(userId, values),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scheduleKeys.all(userId) })
-    },
+    onSuccess: () => invalidateAll(queryClient, userId),
   })
 }
 
@@ -67,9 +72,7 @@ export function useUpdateSchedule(userId: string) {
       scheduleId: string
       values: Partial<ScheduleFormValues>
     }) => updateSchedule(userId, scheduleId, values),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scheduleKeys.all(userId) })
-    },
+    onSuccess: () => invalidateAll(queryClient, userId),
   })
 }
 
@@ -79,9 +82,7 @@ export function useDeleteSchedule(userId: string) {
 
   return useMutation({
     mutationFn: (scheduleId: string) => deleteSchedule(userId, scheduleId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scheduleKeys.all(userId) })
-    },
+    onSuccess: () => invalidateAll(queryClient, userId),
   })
 }
 
@@ -97,8 +98,6 @@ export function useToggleScheduleDone(userId: string) {
       scheduleId: string
       isDone: boolean
     }) => toggleScheduleDone(userId, scheduleId, isDone),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: scheduleKeys.all(userId) })
-    },
+    onSuccess: () => invalidateAll(queryClient, userId),
   })
 }

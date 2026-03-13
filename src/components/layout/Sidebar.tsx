@@ -152,8 +152,9 @@ export function Sidebar() {
 
 function SidebarUpcomingItem({ schedule }: { schedule: Schedule }) {
   const { openEditModal } = useUiStore()
-  const dday = getDDayNumber(schedule.startAt.toDate())
-  const label = getDDayLabel(schedule.startAt.toDate())
+  const endDate = schedule.endAt.toDate()
+  const dday = getDDayNumber(endDate)
+  const label = getDDayLabel(endDate)
   const isUrgent = dday <= 1
 
   return (
