@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { ModalMode } from '@/types'
 
+type BottomTab = 'calendar' | 'schedule' | 'upcoming' | 'settings'
+
 interface UiState {
   // 일정 모달
   isScheduleModalOpen: boolean
@@ -12,12 +14,21 @@ interface UiState {
   // 설정 모달
   isSettingsModalOpen: boolean
 
+  // 모바일 네비게이션
+  activeBottomTab: BottomTab
+  isSidebarOpen: boolean
+  isDayPanelOpen: boolean
+
   // Actions
   openCreateModal: (defaultDate?: Date) => void
   openEditModal: (scheduleId: string, instanceDate?: Date) => void
   closeScheduleModal: () => void
   openSettingsModal: () => void
   closeSettingsModal: () => void
+  setActiveBottomTab: (tab: BottomTab) => void
+  toggleSidebar: () => void
+  setSidebarOpen: (open: boolean) => void
+  setDayPanelOpen: (open: boolean) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -27,6 +38,11 @@ export const useUiStore = create<UiState>((set) => ({
   editingDate: null,
   defaultDate: null,
   isSettingsModalOpen: false,
+
+  // 모바일
+  activeBottomTab: 'calendar',
+  isSidebarOpen: false,
+  isDayPanelOpen: false,
 
   openCreateModal: (defaultDate) =>
     set({
@@ -55,4 +71,9 @@ export const useUiStore = create<UiState>((set) => ({
 
   openSettingsModal: () => set({ isSettingsModalOpen: true }),
   closeSettingsModal: () => set({ isSettingsModalOpen: false }),
+
+  setActiveBottomTab: (tab) => set({ activeBottomTab: tab }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+  setDayPanelOpen: (open) => set({ isDayPanelOpen: open }),
 }))

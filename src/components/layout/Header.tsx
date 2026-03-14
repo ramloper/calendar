@@ -1,21 +1,33 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useUiStore } from '@/stores/uiStore'
 import { ThemeToggle } from './ThemeToggle'
 import { formatDate } from '@/lib/utils/date'
-import { LogOut } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function Header() {
   const { user, signOut } = useAuth()
+  const { toggleSidebar } = useUiStore()
 
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-6 bg-background shrink-0">
-      <div className="text-sm text-muted-foreground">
+      {/* 모바일 햄버거 메뉴 */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className="md:hidden w-9 h-9"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      <div className="text-sm text-muted-foreground hidden md:block">
         {/*{formatDate(new Date(), 'yyyy년 M월 d일 EEEE')}*/}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 md:ml-auto">
         <ThemeToggle />
         {user?.photoURL && (
           // eslint-disable-next-line @next/next/no-img-element
