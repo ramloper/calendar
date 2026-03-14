@@ -22,6 +22,7 @@ import { useCalendarStore } from '@/stores/calendarStore'
 import { useUiStore } from '@/stores/uiStore'
 import { getMonthGrid, isSameMonth, isSameDay, isToday, getWeekDays } from '@/lib/utils/date'
 import { computeWeekLayout, maxSlots, isMultiDay, toDate, type EventLayout } from '@/lib/utils/multiday'
+import { expandForMonth } from '@/lib/utils/repeat'
 import { cn } from '@/lib/utils'
 import type { Schedule } from '@/types'
 
@@ -300,6 +301,28 @@ export function MonthView() {
 
   const grid = getMonthGrid(currentDate)
 
+  // 반복 일정을 이번 달 인스턴스로 펼침
+  const expandedSchedules = useMemo(() => {
+    try {
+      const result = expandForMonth(schedules ?? [], currentDate)
+      const repeatOnes = schedules?.filter(s => s.repeat?.enabled) ?? []
+      console.log('[repeat debug] raw:', schedules?.length ?? 0,
+        '/ expanded:', result.length,
+        '/ repeat enabled:', repeatOnes.length)
+      if (repeatOnes.length > 0) {
+        console.log('[repeat debug] repeat 일정 샘플:', JSON.stringify({
+          id: repeatOnes[0].id,
+          repeat: repeatOnes[0].repeat,
+          startAt: repeatOnes[0].startAt,
+        }))
+      }
+      return result
+    } catch (e) {
+      console.error('[repeat debug] expandForMonth 에러:', e)
+      return schedules ?? []
+    }
+  }, [schedules, currentDate])
+
   // 주 단위로 분리 (6주)
   const weeks = useMemo(() => {
     const rows: Date[][] = []
@@ -338,8 +361,11 @@ export function MonthView() {
     const newStart = addDays(toDate(schedule.startAt as Timestamp | Date | string), deltaDays)
     const newEnd = addDays(toDate(schedule.endAt as Timestamp | Date | string), deltaDays)
 
+    // 반복 인스턴스 가상 ID(`원본id__timestamp`)에서 원본 ID 추출
+    const realId = schedule.id.includes('__') ? schedule.id.split('__')[0] : schedule.id
+
     updateSchedule.mutate({
-      scheduleId: schedule.id,
+      scheduleId: realId,
       values: { startAt: newStart, endAt: newEnd },
     })
   }, [user, updateSchedule])
@@ -374,13 +400,21 @@ export function MonthView() {
             <WeekRow
               key={rowIdx}
               weekDays={weekDays}
-              schedules={schedules ?? []}
+              schedules={expandedSchedules}
               currentDate={currentDate}
               selectedDate={selectedDate}
               onSelectDate={(date) => {
                 setSelectedDate(date)
               }}
-              onEdit={openEditModal}
+              onEdit={(id) => {
+                // 반복 인스턴스 가상 ID에서 원본 ID와 instanceDate 분리
+                if (id.includes('__')) {
+                  const [realId, ts] = id.split('__')
+                  openEditModal(realId, new Date(Number(ts)))
+                } else {
+                  openEditModal(id)
+                }
+              }}
             />
           ))}
         </div>

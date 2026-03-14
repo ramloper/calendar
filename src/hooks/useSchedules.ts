@@ -6,6 +6,9 @@ import {
   fetchSchedulesByRange,
   createSchedule,
   updateSchedule,
+  updateRepeatThis,
+  updateRepeatFollowing,
+  updateRepeatAll,
   deleteSchedule,
   toggleScheduleDone,
 } from '@/lib/firebase/firestore'
@@ -82,6 +85,33 @@ export function useDeleteSchedule(userId: string) {
 
   return useMutation({
     mutationFn: (scheduleId: string) => deleteSchedule(userId, scheduleId),
+    onSuccess: () => invalidateAll(queryClient, userId),
+  })
+}
+
+// ─── 반복 일정 수정 ──────────────────────────────────────
+
+export type RepeatEditMode = 'this' | 'following' | 'all'
+
+export function useUpdateRepeatSchedule(userId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      scheduleId,
+      instanceDate,
+      mode,
+      values,
+    }: {
+      scheduleId: string
+      instanceDate: Date
+      mode: RepeatEditMode
+      values: ScheduleFormValues
+    }) => {
+      if (mode === 'this')      return updateRepeatThis(userId, scheduleId, instanceDate, values)
+      if (mode === 'following') return updateRepeatFollowing(userId, scheduleId, instanceDate, values)
+      return updateRepeatAll(userId, scheduleId, values)
+    },
     onSuccess: () => invalidateAll(queryClient, userId),
   })
 }

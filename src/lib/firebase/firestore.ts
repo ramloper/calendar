@@ -146,6 +146,111 @@ export async function deleteSchedule(
   await deleteDoc(scheduleRef(userId, scheduleId))
 }
 
+// ─── 반복 일정 수정 (3가지 모드) ─────────────────────────
+
+/**
+ * [이 일정만] 수정
+ * - 원본의 repeat.exceptions에 instanceDate 추가 (해당 날짜 제외)
+ * - 해당 날짜에 대한 새 단일 일정 생성
+ */
+export async function updateRepeatThis(
+  userId: string,
+  scheduleId: string,
+  instanceDate: Date,
+  values: ScheduleFormValues
+): Promise<void> {
+  const originalSnap = await getDoc(scheduleRef(userId, scheduleId))
+  const currentExceptions: Timestamp[] = originalSnap.data()?.repeat?.exceptions ?? []
+
+  await updateDoc(scheduleRef(userId, scheduleId), {
+    'repeat.exceptions': [...currentExceptions, Timestamp.fromDate(instanceDate)],
+    updatedAt: serverTimestamp(),
+  })
+
+  const newData = {
+    ...values,
+    startAt: Timestamp.fromDate(values.startAt),
+    endAt:   Timestamp.fromDate(values.endAt),
+    repeat: {
+      enabled: false, type: 'weekly' as const, interval: 1,
+      endType: 'never' as const, daysOfWeek: null,
+      endDate: null, endCount: null, exceptions: [],
+    },
+    notifications: {
+      ...values.notifications,
+      sentFlags: values.notifications.advanceTimes.map(() => false),
+    },
+    isDone: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }
+  await addDoc(schedulesRef(userId), newData)
+}
+
+/**
+ * [이후 모두] 수정
+ * - 원본 일정의 repeat.endDate를 instanceDate 하루 전으로 설정
+ * - instanceDate부터 새 일정 생성 (수정된 내용 + 동일 반복 설정)
+ */
+export async function updateRepeatFollowing(
+  userId: string,
+  scheduleId: string,
+  instanceDate: Date,
+  values: ScheduleFormValues
+): Promise<void> {
+  const dayBefore = new Date(instanceDate.getTime() - 24 * 60 * 60 * 1000)
+
+  await updateDoc(scheduleRef(userId, scheduleId), {
+    'repeat.endType': 'date',
+    'repeat.endDate': Timestamp.fromDate(dayBefore),
+    updatedAt: serverTimestamp(),
+  })
+
+  const newData = {
+    ...values,
+    startAt: Timestamp.fromDate(values.startAt),
+    endAt:   Timestamp.fromDate(values.endAt),
+    repeat: {
+      ...sanitizeRepeat(values.repeat),
+      exceptions: [],
+    },
+    notifications: {
+      ...values.notifications,
+      sentFlags: values.notifications.advanceTimes.map(() => false),
+    },
+    isDone: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }
+  await addDoc(schedulesRef(userId), newData)
+}
+
+/**
+ * [전체] 수정
+ * - 기존 updateSchedule과 동일 + exceptions 초기화
+ */
+export async function updateRepeatAll(
+  userId: string,
+  scheduleId: string,
+  values: Partial<ScheduleFormValues>
+): Promise<void> {
+  const { notifications, repeat, startAt, endAt, ...rest } = values
+  const data: Record<string, unknown> = { ...rest, updatedAt: serverTimestamp() }
+
+  if (startAt) data.startAt = Timestamp.fromDate(startAt)
+  if (endAt)   data.endAt   = Timestamp.fromDate(endAt)
+  if (repeat)  data.repeat  = { ...sanitizeRepeat(repeat), exceptions: [] }
+
+  if (notifications) {
+    data['notifications.email']        = notifications.email
+    data['notifications.sms']          = notifications.sms
+    data['notifications.advanceTimes'] = notifications.advanceTimes
+    data['notifications.sentFlags']    = notifications.advanceTimes.map(() => false)
+  }
+
+  await updateDoc(scheduleRef(userId, scheduleId), data)
+}
+
 export async function toggleScheduleDone(
   userId: string,
   scheduleId: string,

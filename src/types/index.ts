@@ -40,6 +40,7 @@ export interface RepeatConfig {
   endType: RepeatEndType
   endDate?: Timestamp
   endCount?: number
+  exceptions?: Timestamp[]   // "이 일정만" 수정/삭제 시 제외할 날짜 목록
 }
 
 export interface ScheduleNotification {

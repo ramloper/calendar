@@ -55,10 +55,10 @@ const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
 ]
 
 const ADVANCE_OPTIONS = [
-  { value: 10,   label: '10분 전' },
-  { value: 30,   label: '30분 전' },
-  { value: 60,   label: '1시간 전' },
-  { value: 1440, label: '1일 전' },
+  { value: 10,    label: '10분 전' },
+  { value: 30,    label: '30분 전' },
+  { value: 60,    label: '1시간 전' },
+  { value: 1440,  label: '1일 전' },
   { value: 10080, label: '7일 전' },
   { value: 21600, label: '보름 전' },
   { value: 43200, label: '한 달 전' },
@@ -69,6 +69,70 @@ const PRESET_COLORS = [
   '#AF52DE', '#FF2D55', '#5AC8FA', '#FFCC00',
 ]
 
+const HOURS   = Array.from({ length: 24 }, (_, i) => i)
+const MINUTES = [0, 10, 15, 20, 30, 45]
+
+// ─── 시간만 선택하는 인라인 피커 ─────────────────────────
+
+function TimePicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: Date
+  onChange: (d: Date) => void
+}) {
+  const currentMinute = MINUTES.includes(value.getMinutes())
+    ? value.getMinutes()
+    : MINUTES.reduce((a, b) =>
+        Math.abs(b - value.getMinutes()) < Math.abs(a - value.getMinutes()) ? b : a
+      )
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label className="text-muted-foreground font-normal shrink-0 w-14">{label}</Label>
+      <Select
+        value={String(value.getHours())}
+        onValueChange={(h) => {
+          const next = new Date(value)
+          next.setHours(Number(h))
+          onChange(next)
+        }}
+      >
+        <SelectTrigger className="w-20 h-9">
+          <SelectValue>{String(value.getHours()).padStart(2, '0')}시</SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-48">
+          {HOURS.map((h) => (
+            <SelectItem key={h} value={String(h)}>
+              {String(h).padStart(2, '0')}시
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={String(currentMinute)}
+        onValueChange={(m) => {
+          const next = new Date(value)
+          next.setMinutes(Number(m))
+          onChange(next)
+        }}
+      >
+        <SelectTrigger className="w-20 h-9">
+          <SelectValue>{String(currentMinute).padStart(2, '0')}분</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {MINUTES.map((m) => (
+            <SelectItem key={m} value={String(m)}>
+              {String(m).padStart(2, '0')}분
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
 
 // ─── Props ───────────────────────────────────────────────
 
@@ -111,15 +175,17 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
       },
     })
 
-  const isAllDay = watch('isAllDay')
-  const priority = watch('priority')
-  const color = watch('color')
+  const isAllDay      = watch('isAllDay')
+  const priority      = watch('priority')
+  const color         = watch('color')
   const repeatEnabled = watch('repeat.enabled')
-  const repeatType = watch('repeat.type')
+  const repeatType    = watch('repeat.type')
   const repeatEndType = watch('repeat.endType')
-  const advanceTimes = watch('notifications.advanceTimes')
-  const emailNotif = watch('notifications.email')
-  const smsNotif = watch('notifications.sms')
+  const advanceTimes  = watch('notifications.advanceTimes')
+  const emailNotif    = watch('notifications.email')
+  const smsNotif      = watch('notifications.sms')
+  const startAt       = watch('startAt') ?? now
+  const endAt         = watch('endAt') ?? oneHourLater
 
   const toggleAdvanceTime = (minutes: number) => {
     const current = advanceTimes ?? []
@@ -157,32 +223,44 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
         />
       </div>
 
-      {/* 종일 여부 */}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="isAllDay"
-          checked={isAllDay}
-          onCheckedChange={(checked) => setValue('isAllDay', !!checked)}
-        />
-        <Label htmlFor="isAllDay" className="cursor-pointer font-normal">
-          종일
-        </Label>
+      {/* 종일 + 반복 — 같은 행 */}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="isAllDay"
+            checked={isAllDay}
+            onCheckedChange={(checked) => setValue('isAllDay', !!checked)}
+          />
+          <Label htmlFor="isAllDay" className="cursor-pointer font-normal">
+            종일
+          </Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="repeatEnabled"
+            checked={repeatEnabled}
+            onCheckedChange={(checked) => setValue('repeat.enabled', !!checked)}
+          />
+          <Label htmlFor="repeatEnabled" className="cursor-pointer font-normal">
+            반복
+          </Label>
+        </div>
       </div>
 
-      {/* 날짜/시간 — 종일 체크 시 숨김 */}
-      {!isAllDay && (
+      {/* 날짜/시간 — 종일도 아니고 반복도 아닐 때만 표시 */}
+      {!isAllDay && !repeatEnabled && (
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>시작</Label>
             <DateTimePicker
-              value={watch('startAt') ?? now}
+              value={startAt}
               onChange={(date) => setValue('startAt', date)}
             />
           </div>
           <div className="space-y-1.5">
             <Label>종료</Label>
             <DateTimePicker
-              value={watch('endAt') ?? oneHourLater}
+              value={endAt}
               onChange={(date) => setValue('endAt', date)}
             />
           </div>
@@ -231,73 +309,145 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
         </div>
       </div>
 
-      {/* 반복 */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="repeatEnabled"
-            checked={repeatEnabled}
-            onCheckedChange={(checked) => setValue('repeat.enabled', !!checked)}
-          />
-          <Label htmlFor="repeatEnabled" className="cursor-pointer">
-            반복
-          </Label>
-        </div>
+      {/* 반복 설정 패널 */}
+      {repeatEnabled && (
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
 
-        {repeatEnabled && (
-          <div className="pl-6 space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-muted-foreground font-normal shrink-0">매</Label>
-              <Input
-                type="number"
-                min={1}
-                value={watch('repeat.interval') ?? 1}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  setValue('repeat.interval', v > 0 ? v : 1)
+          {/* 시작/종료 시간 */}
+          {!isAllDay && (
+            <div className="space-y-2 pb-3 border-b border-border">
+              <TimePicker
+                label="시작 시간"
+                value={startAt}
+                onChange={(d) => {
+                  setValue('startAt', d)
+                  // 종료 시간이 시작보다 앞서면 1시간 뒤로 조정
+                  if (d.getTime() >= endAt.getTime()) {
+                    setValue('endAt', new Date(d.getTime() + 60 * 60 * 1000))
+                  }
                 }}
-                className="w-16 text-center"
               />
-              <Select
-                value={repeatType}
-                onValueChange={(v) => setValue('repeat.type', v as never)}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue>
-                    {{ daily: '일', weekly: '주', monthly: '월', yearly: '년', custom: '직접' }[repeatType]}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">일</SelectItem>
-                  <SelectItem value="weekly">주</SelectItem>
-                  <SelectItem value="monthly">월</SelectItem>
-                  <SelectItem value="yearly">년</SelectItem>
-                </SelectContent>
-              </Select>
-              <Label className="text-muted-foreground font-normal shrink-0">마다</Label>
+              <TimePicker
+                label="종료 시간"
+                value={endAt}
+                onChange={(d) => setValue('endAt', d)}
+              />
             </div>
+          )}
 
-            <div className="flex items-center gap-2">
-              <Label className="text-muted-foreground font-normal shrink-0">종료</Label>
-              <Select
-                value={repeatEndType}
-                onValueChange={(v) => setValue('repeat.endType', v as never)}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue>
-                    {{ never: '계속', date: '날짜 지정', count: '횟수 지정' }[repeatEndType]}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="never">계속</SelectItem>
-                  <SelectItem value="date">날짜 지정</SelectItem>
-                  <SelectItem value="count">횟수 지정</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* 반복 주기 */}
+          <div className="flex items-center gap-2">
+            <Label className="text-muted-foreground font-normal shrink-0">매</Label>
+            <Input
+              type="number"
+              min={1}
+              value={watch('repeat.interval') ?? 1}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                setValue('repeat.interval', v > 0 ? v : 1)
+              }}
+              className="w-16 text-center"
+            />
+            <Select
+              value={repeatType}
+              onValueChange={(v) => {
+                setValue('repeat.type', v as never)
+                if (v !== 'weekly') setValue('repeat.daysOfWeek', undefined)
+              }}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue>
+                  {{ daily: '일', weekly: '주', monthly: '월', yearly: '년', custom: '직접' }[repeatType]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">일</SelectItem>
+                <SelectItem value="weekly">주</SelectItem>
+                <SelectItem value="monthly">월</SelectItem>
+                <SelectItem value="yearly">년</SelectItem>
+              </SelectContent>
+            </Select>
+            <Label className="text-muted-foreground font-normal shrink-0">마다</Label>
           </div>
-        )}
-      </div>
+
+          {/* 주간 반복 시 요일 선택 */}
+          {repeatType === 'weekly' && (
+            <div className="flex items-center gap-1.5">
+              {['일', '월', '화', '수', '목', '금', '토'].map((label, dow) => {
+                const selected = (watch('repeat.daysOfWeek') ?? []).includes(dow)
+                return (
+                  <button
+                    key={dow}
+                    type="button"
+                    onClick={() => {
+                      const current = watch('repeat.daysOfWeek') ?? []
+                      setValue(
+                        'repeat.daysOfWeek',
+                        selected ? current.filter((d) => d !== dow) : [...current, dow]
+                      )
+                    }}
+                    className={cn(
+                      'w-8 h-8 rounded-full text-xs font-medium border transition-colors',
+                      selected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-muted-foreground border-input hover:border-foreground',
+                      dow === 0 && !selected && 'text-red-500',
+                      dow === 6 && !selected && 'text-blue-500',
+                    )}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* 반복 종료 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Label className="text-muted-foreground font-normal shrink-0">종료</Label>
+            <Select
+              value={repeatEndType}
+              onValueChange={(v) => setValue('repeat.endType', v as never)}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue>
+                  {{ never: '계속', date: '날짜 지정', count: '횟수 지정' }[repeatEndType]}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="never">계속</SelectItem>
+                <SelectItem value="date">날짜 지정</SelectItem>
+                <SelectItem value="count">횟수 지정</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* 횟수 지정 */}
+            {repeatEndType === 'count' && (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  min={1}
+                  value={watch('repeat.endCount') ?? 1}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setValue('repeat.endCount', v > 0 ? v : 1)
+                  }}
+                  className="w-20 text-center"
+                />
+                <Label className="text-muted-foreground font-normal shrink-0">회</Label>
+              </div>
+            )}
+
+            {/* 날짜 지정 */}
+            {repeatEndType === 'date' && (
+              <DateTimePicker
+                value={watch('repeat.endDate') instanceof Date ? watch('repeat.endDate') as Date : new Date()}
+                onChange={(d) => setValue('repeat.endDate', d)}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 알림 */}
       <div className="space-y-3 border-t border-border pt-4">

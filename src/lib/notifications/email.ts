@@ -33,7 +33,7 @@ export async function sendReminderEmail({
           <strong>${scheduleTitle}</strong> 일정이 <strong>${timeLabel} 후</strong>에 시작됩니다.
         </p>
         <p style="color: #8B95A1; font-size: 14px;">
-          시작 시간: ${scheduleStartAt.toLocaleString('ko-KR')}
+          시작 시간: ${scheduleStartAt.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
         </p>
       </div>
     `,
