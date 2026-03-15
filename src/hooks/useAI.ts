@@ -45,8 +45,15 @@ export function useAIFormatting(): UseAIFormatting {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'AI 정리 실패')
+        let errorMessage = 'AI 정리 실패'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // 응답이 JSON이 아닐 수 있음 (HTML 에러 페이지 등)
+          errorMessage = `서버 오류: ${response.status} ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()

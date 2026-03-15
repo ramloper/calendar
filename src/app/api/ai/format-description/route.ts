@@ -46,8 +46,19 @@ Format the response as plain text or markdown if structure is helpful.`
       ],
     })
 
-    const responseText =
-      message.content[0].type === 'text' ? message.content[0].text : ''
+    // 응답에서 텍스트 추출
+    const responseText = (() => {
+      if (!message.content || message.content.length === 0) {
+        throw new Error('Claude API 응답이 비어있습니다')
+      }
+
+      const firstContent = message.content[0]
+      if ('text' in firstContent) {
+        return firstContent.text
+      }
+
+      throw new Error(`예상치 못한 응답 타입: ${(firstContent as any).type}`)
+    })()
 
     return NextResponse.json({
       ok: true,
@@ -55,10 +66,25 @@ Format the response as plain text or markdown if structure is helpful.`
     })
   } catch (error) {
     console.error('AI 포맷팅 오류:', error)
-    const errorMessage = error instanceof Error ? error.message : 'AI 정리 실패'
+
+    let errorMessage = 'AI 정리 실패'
+    let statusCode = 500
+
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'object' && error !== null && 'message' in error) {
+      errorMessage = (error as any).message
+    }
+
+    // API 키 관련 에러 감지
+    if (errorMessage.includes('invalid_api_key') || errorMessage.includes('401')) {
+      errorMessage = 'Claude API 키가 유효하지 않습니다'
+      statusCode = 401
+    }
+
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }
