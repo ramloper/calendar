@@ -32,7 +32,7 @@ export function useAIFormatting(): UseAIFormatting {
       }
 
       // 백엔드 API 엔드포인트에 요청
-      const response = await fetch('/api/ai/format-description', {
+      const response = await fetch('/calendar/api/ai/format-description', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
