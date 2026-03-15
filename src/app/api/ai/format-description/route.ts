@@ -18,10 +18,10 @@ export async function POST(req: NextRequest) {
       apiKey: apiKey,
     })
 
-    const prompt = `Schedule: "${title}"
-Description: "${description || '(no description)'}"
+    const prompt = `일정: "${title}"
+설명: "${description || '(설명 없음)'}"
 
-Improve and organize this description concisely. Use bullet points if needed. Only output the improved description.`
+위 설명을 간결하게 정리하고 체계적으로 구성해주세요. 필요하면 bullet points를 사용하세요. 정리된 설명만 출력해주세요.`
 
     const message = await client.messages.create({
       model: 'claude-opus-4-20250514',
