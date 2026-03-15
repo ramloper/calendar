@@ -36,7 +36,7 @@ Please:
 Format the response as plain text or markdown if structure is helpful.`
 
     const message = await client.messages.create({
-      model: 'claude-3-5-sonnet-20250514',
+      model: 'claude-opus-4-20250514',
       max_tokens: 500,
       messages: [
         {
