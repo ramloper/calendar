@@ -1,17 +1,16 @@
 /**
  * Hook for AI-powered schedule formatting
- * Handles loading states, errors, and API calls
+ * Handles loading states, errors, and API calls to backend
  */
 
 import { useState } from 'react'
-import { formatScheduleDescription, type FormatDescriptionInput } from '@/lib/ai'
 import { useUserSettings } from './useUserSettings'
 
 export interface UseAIFormatting {
   isLoading: boolean
   error: string | null
   formattedDescription: string | null
-  formatDescription: (input: Omit<FormatDescriptionInput, 'apiKey'>) => Promise<void>
+  formatDescription: (input: { title: string; currentDescription: string }) => Promise<void>
   reset: () => void
 }
 
@@ -21,7 +20,7 @@ export function useAIFormatting(): UseAIFormatting {
   const [formattedDescription, setFormattedDescription] = useState<string | null>(null)
   const { data: settings } = useUserSettings()
 
-  const formatDescription = async (input: Omit<FormatDescriptionInput, 'apiKey'>) => {
+  const formatDescription = async (input: { title: string; currentDescription: string }) => {
     setIsLoading(true)
     setError(null)
     setFormattedDescription(null)
@@ -32,10 +31,25 @@ export function useAIFormatting(): UseAIFormatting {
         throw new Error('Claude API 키가 설정되지 않았습니다. 설정 > AI 설정에서 API 키를 입력해주세요.')
       }
 
-      const result = await formatScheduleDescription({
-        ...input,
-        apiKey,
+      // 백엔드 API 엔드포인트에 요청
+      const response = await fetch('/api/ai/format-description', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: input.title,
+          description: input.currentDescription,
+          apiKey,
+        }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'AI 정리 실패')
+      }
+
+      const result = await response.json()
       setFormattedDescription(result.formatted)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'AI 정리 실패'
