@@ -97,7 +97,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   // value prop이 변경되면 에디터 내용 업데이트
   useEffect(() => {
     if (editor && value !== undefined && editor.getHTML() !== value) {
-      console.log('🔄 에디터 내용 업데이트:', value)
       editor.commands.setContent(value)
     }
   }, [editor, value])

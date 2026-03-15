@@ -57,7 +57,6 @@ export function useAIFormatting(): UseAIFormatting {
       }
 
       const result = await response.json()
-      console.log('✅ AI API 응답:', result.formatted)
       setFormattedDescription(result.formatted)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'AI 정리 실패'
