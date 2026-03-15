@@ -219,6 +219,7 @@ export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoad
   // AI 포매팅 결과가 있으면 자동으로 폼 업데이트
   useEffect(() => {
     if (formattedDescription) {
+      console.log('📝 AI 결과 반영:', formattedDescription)
       setValue('description', formattedDescription)
     }
   }, [formattedDescription, setValue])

@@ -16,7 +16,7 @@ import {
   Heading2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 interface Props {
   value?: string
@@ -93,6 +93,14 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
       onChange?.(editor.getHTML())
     },
   })
+
+  // value prop이 변경되면 에디터 내용 업데이트
+  useEffect(() => {
+    if (editor && value !== undefined && editor.getHTML() !== value) {
+      console.log('🔄 에디터 내용 업데이트:', value)
+      editor.commands.setContent(value)
+    }
+  }, [editor, value])
 
   const setLink = useCallback(() => {
     if (!editor) return
