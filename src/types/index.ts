@@ -68,6 +68,8 @@ export interface Schedule {
 
   notifications: ScheduleNotification
 
+  tagIds?: string[]                // 태그 ID 배열
+
   desktopNotification?: boolean    // Electron 미래 대비
 
   isDone: boolean
@@ -98,6 +100,7 @@ export interface ScheduleFormValues {
     sms: boolean
     advanceTimes: number[]
   }
+  tagIds?: string[]  // 태그 ID 배열
 }
 
 // ─── 태그 ───────────────────────────────────────────────

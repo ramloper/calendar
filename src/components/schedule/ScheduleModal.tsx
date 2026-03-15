@@ -216,11 +216,13 @@ export function ScheduleModal() {
   return (
     <Dialog
       open={isScheduleModalOpen}
-      onOpenChange={() => {
-        // Dialog dismiss 무시
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose()
+        }
       }}
     >
-      <DialogContent className="w-[840px] max-w-[90vw] max-h-[90vh] overflow-y-auto" showCloseButton={false}>
+      <DialogContent className="w-[840px] max-w-[90vw] max-h-[90vh] overflow-y-auto" showCloseButton={true}>
 
         {/* 삭제 확인 화면 */}
         {showDeleteConfirm ? (

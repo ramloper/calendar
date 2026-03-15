@@ -284,6 +284,14 @@ export async function deleteTag(userId: string, tagId: string): Promise<void> {
   await deleteDoc(tagRef(userId, tagId))
 }
 
+export async function updateTag(
+  userId: string,
+  tagId: string,
+  updates: Partial<Omit<Tag, 'id' | 'createdAt'>>
+): Promise<void> {
+  await updateDoc(tagRef(userId, tagId), updates)
+}
+
 // ─── 유저 설정 ───────────────────────────────────────────
 
 const userDocRef = (userId: string) => doc(db, 'users', userId)
