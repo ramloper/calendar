@@ -18,26 +18,14 @@ export async function POST(req: NextRequest) {
       apiKey: apiKey,
     })
 
-    const prompt = `You are a helpful assistant that improves and formats schedule/event descriptions.
+    const prompt = `Schedule: "${title}"
+Description: "${description || '(no description)'}"
 
-Task: Improve and organize the following event description.
-
-Event Title: "${title}"
-Current Description: "${description || '(no description provided)'}"
-
-Please:
-1. Organize the description with clear structure (bullet points if needed)
-2. Remove redundancy and repetition
-3. Add important details that might be implicit
-4. Keep it concise but complete
-5. Use professional but friendly language
-6. Output ONLY the improved description, no explanations
-
-Format the response as plain text or markdown if structure is helpful.`
+Improve and organize this description concisely. Use bullet points if needed. Only output the improved description.`
 
     const message = await client.messages.create({
       model: 'claude-opus-4-20250514',
-      max_tokens: 500,
+      max_tokens: 250,
       messages: [
         {
           role: 'user',
