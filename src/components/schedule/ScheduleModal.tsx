@@ -214,8 +214,13 @@ export function ScheduleModal() {
     updateRepeat.isPending    || deleteSchedule.isPending
 
   return (
-    <Dialog open={isScheduleModalOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="w-[840px] max-w-[90vw] max-h-[90vh] overflow-y-auto">
+    <Dialog
+      open={isScheduleModalOpen}
+      onOpenChange={() => {
+        // Dialog dismiss 무시
+      }}
+    >
+      <DialogContent className="w-[840px] max-w-[90vw] max-h-[90vh] overflow-y-auto" showCloseButton={false}>
 
         {/* 삭제 확인 화면 */}
         {showDeleteConfirm ? (
@@ -271,16 +276,27 @@ export function ScheduleModal() {
                 <DialogTitle>
                   {scheduleModalMode === 'create' ? '새 일정' : '일정 수정'}
                 </DialogTitle>
-                {scheduleModalMode === 'edit' && (
+                <div className="flex items-center gap-2">
+                  {scheduleModalMode === 'edit' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setShowDeleteConfirm(true)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {/* DialogPrimitive.Close 대신 커스텀 close 버튼 */}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-8 h-8 text-muted-foreground hover:text-foreground"
+                    onClick={handleClose}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    ✕
                   </Button>
-                )}
+                </div>
               </div>
             </DialogHeader>
 
@@ -291,6 +307,7 @@ export function ScheduleModal() {
             )}
             <ScheduleForm
               key={`${editingScheduleId ?? 'create'}-${formKey}`}
+              userId={user?.uid ?? ''}
               defaultValues={defaultValues}
               onSubmit={handleSubmit}
               onCancel={handleClose}

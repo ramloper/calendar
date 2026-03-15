@@ -43,6 +43,7 @@ const schema = z.object({
     sms: z.boolean(),
     advanceTimes: z.array(z.number()),
   }),
+  tagIds: z.array(z.string()).optional(),
 })
 
 // ─── 상수 ────────────────────────────────────────────────
@@ -137,6 +138,7 @@ function TimePicker({
 // ─── Props ───────────────────────────────────────────────
 
 interface Props {
+  userId: string
   defaultValues?: Partial<ScheduleFormValues>
   onSubmit: (values: ScheduleFormValues) => void
   onCancel: () => void
@@ -145,7 +147,7 @@ interface Props {
 
 // ─── 컴포넌트 ────────────────────────────────────────────
 
-export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: Props) {
+export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoading }: Props) {
   const now = new Date()
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
 
@@ -197,7 +199,7 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative">
 
       {/* 제목 */}
       <div className="space-y-1.5">
@@ -496,6 +498,7 @@ export function ScheduleForm({ defaultValues, onSubmit, onCancel, isLoading }: P
           </div>
         )}
       </div>
+
 
       {/* 버튼 */}
       <div className="flex gap-2 pt-2">
