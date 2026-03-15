@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -217,9 +217,11 @@ export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoad
   }
 
   // AI 포매팅 결과가 있으면 자동으로 폼 업데이트
-  if (formattedDescription) {
-    setValue('description', formattedDescription)
-  }
+  useEffect(() => {
+    if (formattedDescription) {
+      setValue('description', formattedDescription)
+    }
+  }, [formattedDescription, setValue])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative">
