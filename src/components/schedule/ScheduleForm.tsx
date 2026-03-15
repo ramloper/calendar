@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,6 +18,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { useAIFormatting } from '@/hooks/useAI'
+import { Sparkles, Loader } from 'lucide-react'
 import type { ScheduleFormValues, Priority } from '@/types'
 
 // ─── Zod 스키마 ──────────────────────────────────────────
@@ -151,6 +154,9 @@ export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoad
   const now = new Date()
   const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
 
+  // AI 포매팅 훅
+  const { isLoading: isAILoading, error: aiError, formattedDescription, formatDescription } = useAIFormatting()
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } =
     useForm<ScheduleFormValues>({
       resolver: zodResolver(schema),
@@ -198,6 +204,23 @@ export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoad
     }
   }
 
+  const handleAIFormat = async () => {
+    const title = watch('title')
+    const description = watch('description') || ''
+
+    if (!title && !description) {
+      alert('제목이나 메모를 먼저 입력해주세요')
+      return
+    }
+
+    await formatDescription({ title, currentDescription: description })
+  }
+
+  // AI 포매팅 결과가 있으면 자동으로 폼 업데이트
+  if (formattedDescription) {
+    setValue('description', formattedDescription)
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative">
 
@@ -216,13 +239,38 @@ export function ScheduleForm({ userId, defaultValues, onSubmit, onCancel, isLoad
       </div>
 
       {/* 메모 */}
-      <div className="space-y-1.5">
-        <Label>메모</Label>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label>메모</Label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleAIFormat}
+            disabled={isAILoading || isLoading}
+            className="text-xs h-8"
+          >
+            {isAILoading ? (
+              <>
+                <Loader className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                정리 중...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                AI로 정리
+              </>
+            )}
+          </Button>
+        </div>
         <RichTextEditor
-          value={defaultValues?.description ?? ''}
+          value={watch('description') ?? ''}
           onChange={(html) => setValue('description', html)}
-          placeholder="러프하게 적어도 돼요 (추후 AI가 정리해드려요)"
+          placeholder="러프하게 적어도 돼요 (AI가 정리해드려요)"
         />
+        {aiError && (
+          <p className="text-xs text-destructive">AI 정리 실패: {aiError}</p>
+        )}
       </div>
 
       {/* 종일 + 반복 — 같은 행 */}

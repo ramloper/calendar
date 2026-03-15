@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { SendHorizonal, CheckCircle2, XCircle } from 'lucide-react'
+import { SendHorizonal, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -43,16 +43,18 @@ export function SettingsModal() {
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
   const [triggerStatus, setTriggerStatus] = useState<'idle' | 'checking' | 'done'>('idle')
   const [triggerMessage, setTriggerMessage] = useState('')
+  const [claudeApiKey, setClaudeApiKey] = useState('')
 
   // Firestore에서 불러온 설정으로 폼 초기화
   useEffect(() => {
-    if (!settings?.notifications) return
+    if (!settings) return
     const n = settings.notifications
-    setEmailEnabled(n.email ?? false)
-    setSmsEnabled(n.sms ?? false)
-    setEmailAddress(n.emailAddress ?? '')
-    setPhoneNumber(n.phoneNumber ?? '')
-    setAdvanceMinutes(n.advanceMinutes ?? [30])
+    setEmailEnabled(n?.email ?? false)
+    setSmsEnabled(n?.sms ?? false)
+    setEmailAddress(n?.emailAddress ?? '')
+    setPhoneNumber(n?.phoneNumber ?? '')
+    setAdvanceMinutes(n?.advanceMinutes ?? [30])
+    setClaudeApiKey(settings.claudeApiKey ?? '')
   }, [settings])
 
   const toggleAdvance = (minutes: number) => {
@@ -105,6 +107,7 @@ export function SettingsModal() {
         phoneNumber,
         advanceMinutes,
       },
+      claudeApiKey: claudeApiKey || undefined,
     })
     closeSettingsModal()
   }
@@ -259,6 +262,36 @@ export function SettingsModal() {
                 {triggerMessage}
               </p>
             )}
+          </div>
+
+          {/* Claude AI 설정 */}
+          <div className="space-y-3 pt-4 border-t">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <Label className="text-sm font-semibold">AI 설정</Label>
+            </div>
+            <div className="space-y-1.5 pl-6">
+              <Label htmlFor="claudeApiKey" className="text-sm text-muted-foreground">
+                Claude API 키
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  여기서 API 키를 발급
+                </a>
+                받고 입력해주세요 (일정을 AI로 정리할 때 사용됩니다)
+              </p>
+              <Input
+                id="claudeApiKey"
+                type="password"
+                placeholder="sk-ant-..."
+                value={claudeApiKey}
+                onChange={(e) => setClaudeApiKey(e.target.value)}
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                ⚠️ API 키는 안전하게 보관됩니다. 절대 공개하지 마세요.
+              </p>
+            </div>
           </div>
 
         </div>
