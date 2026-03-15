@@ -15,6 +15,7 @@ export interface UserSettings {
   notifications: NotificationSettings
   theme: 'light' | 'dark' | 'system'
   defaultView: CalendarView
+  claudeApiKey?: string  // Claude API 키 (사용자가 설정에서 입력)
 }
 
 export interface NotificationSettings {
