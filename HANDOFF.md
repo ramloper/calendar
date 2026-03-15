@@ -250,6 +250,44 @@ git commit -m "..."
 
 ---
 
+### 8. Claude AI 통합 — 일정 자동 정리 기능 추가
+
+**파일들**:
+- `/src/app/api/ai/format-description/route.ts` (신규 생성)
+- `/src/hooks/useAI.ts` (수정)
+- `/src/lib/ai.ts` (기존 파일, 더 이상 사용 안 함)
+
+**개요**: 사용자가 설정 > AI 설정에서 입력한 Claude API 키를 사용하여 일정 설명을 자동으로 정리하는 기능.
+
+**기술 적용**:
+1. **백엔드 API 엔드포인트** — `/api/ai/format-description`
+   - 클라이언트에서 제목, 설명, API 키를 POST로 전달
+   - 서버에서만 Anthropic SDK 인스턴스화 (브라우저 환경 에러 해결)
+   - Claude 3.5 Sonnet 모델을 사용하여 설명 정리
+   - 정리된 텍스트를 JSON으로 반환
+
+2. **useAIFormatting 훅** — `/src/hooks/useAI.ts`
+   - 로딩/에러 상태 관리
+   - Firestore에서 사용자의 claudeApiKey 가져오기
+   - 백엔드 API 엔드포인트 호출 (fetch)
+   - 성공 시 폼의 description 필드 업데이트
+
+3. **UI 통합** — ScheduleForm.tsx에서 "AI로 정리" 버튼
+   - Sparkles 아이콘 표시
+   - 로딩 중 Loader 아이콘
+   - 에러 메시지 표시
+
+**해결한 문제**: 초기에 클라이언트에서 Anthropic SDK를 직접 사용하려니
+"It looks like you're running in a browser-like environment"라는 에러 발생.
+→ 모든 API 호출을 백엔드로 이동하여 해결.
+
+**주의사항**:
+- 각 사용자가 자신의 Claude API 키를 입력해야 함
+- API 키는 Firestore의 `users/{userId}` 문서에 `claudeApiKey` 필드로 저장
+- 서버에서만 키를 사용하므로 노출 위험 없음
+
+---
+
 ## 향후 개발 예정 / 개선 고려 사항
 
 1. **반복 일정 수정 시 "이 일정만 / 이후 모두 / 전체" 선택 UI** — 아직 미구현
