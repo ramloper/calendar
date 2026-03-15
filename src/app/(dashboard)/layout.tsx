@@ -62,7 +62,6 @@ export default function DashboardLayout({
       </div>
 
       {/* 전역 모달들 */}
-      <Sidebar /> {/* 모바일 드로어 포함 */}
       <ScheduleModal />
       <SettingsModal />
     </>
