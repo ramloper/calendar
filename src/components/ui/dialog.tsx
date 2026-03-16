@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ dismissible = true, ...props }: DialogPrimitive.Root.Props & { dismissible?: boolean }) {
-  return <DialogPrimitive.Root data-slot="dialog" dismissible={dismissible} {...props} />
+function Dialog({ ...props }: DialogPrimitive.Root.Props) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
